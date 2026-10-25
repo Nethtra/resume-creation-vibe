@@ -24,7 +24,30 @@ export interface ResumeData {
 export type EntryKey = 'education' | 'work' | 'projects'
 export type TagKey = 'skills' | 'certificates' | 'awards'
 export type SectionId = EntryKey | TagKey
-export type TemplateVariant = 'classic' | 'sidebar' | 'blocks'
+
+/** 区块是否有内容（「隐藏空模块」开启时空区块不出现在简历上） */
+export function hasContent(id: SectionId, data: ResumeData): boolean {
+  switch (id) {
+    case 'education':
+      return data.education.length > 0
+    case 'work':
+      return data.work.length > 0
+    case 'projects':
+      return data.projects.length > 0
+    case 'skills':
+      return data.skills.length > 0
+    case 'certificates':
+      return data.certificates.length > 0
+    case 'awards':
+      return data.awards.length > 0
+  }
+}
+
+/** 按隐藏空模块的开关过滤展示顺序（三套模板与 PDF 共用） */
+export function visibleOrder(order: SectionId[], data: ResumeData, hideEmpty: boolean): SectionId[] {
+  return hideEmpty ? order.filter((id) => hasContent(id, data)) : order
+}
+export type TemplateVariant = 'classic' | 'sidebar' | 'blocks' | 'centered' | 'dark' | 'band'
 
 /** 简历区块的默认展示顺序（用户可在表单里上下调整，全模板共享） */
 export const DEFAULT_ORDER: SectionId[] = ['education', 'work', 'projects', 'skills', 'certificates', 'awards']
@@ -91,16 +114,29 @@ export const sampleResume: ResumeData = {
     {
       title: '某某大学 · 计算机科学与技术（本科）',
       date: '2023.09 – 2027.06',
-      bullets: ['GPA 3.6 / 4.0（专业前 10%）', '核心课程：数据结构、操作系统、计算机网络、数据库'],
+      bullets: [
+        'GPA 3.6 / 4.0（专业前 10%），连续两年获校一等奖学金',
+        '核心课程：数据结构、操作系统、计算机网络、数据库系统、软件工程',
+        '校内 ACM 集训队队员，兼任算法社团讲师，累计授课 12 次',
+      ],
     },
   ],
   work: [
     {
-      title: '某科技有限公司 · 后端开发实习生',
+      title: '某科技有限公司 · 前端开发实习生',
       date: '2026.03 – 2026.06',
       bullets: [
-        '负责订单模块接口开发，将查询接口平均响应时间从 800ms 优化至 120ms',
-        '参与代码评审，沉淀 3 篇团队开发规范文档',
+        '负责订单模块前端重构，查询接口平均响应时间从 800ms 优化至 120ms，首屏渲染提速 40%',
+        '搭建团队组件文档站，沉淀 30+ 通用组件的使用示例与规范，新组件开发效率提升约 1 倍',
+        '参与每周代码评审与需求评审，独立承接 3 个迭代需求并按时交付',
+      ],
+    },
+    {
+      title: '校网络中心 · 前端开发助理（兼职）',
+      date: '2024.09 – 2025.06',
+      bullets: [
+        '维护校园门户及 12 个院系网站，全年可用率 99.9%，累计处理故障工单 60+',
+        '主导门户首页改版，Lighthouse 性能分从 61 提升至 92',
       ],
     },
   ],
@@ -108,12 +144,45 @@ export const sampleResume: ResumeData = {
     {
       title: '在线简历编辑器（个人开源项目）',
       date: '2026.09 – 至今',
-      bullets: ['独立完成表单编辑、实时预览与 PDF 导出全链路（React + TypeScript + Tailwind CSS）'],
+      bullets: [
+        '独立完成表单编辑、实时预览与 PDF 导出全链路（React + TypeScript + Tailwind CSS）',
+        'GitHub 开源获 200+ Star，支持 Markdown 导入与三套模板切换',
+      ],
+    },
+    {
+      title: '校园二手交易平台（课程设计 · 5 人团队）',
+      date: '2025.09 – 2025.12',
+      bullets: [
+        '负责前端架构与商品详情页，实现图片懒加载与虚拟列表，长列表滚动帧率稳定 60fps',
+      ],
+    },
+    {
+      title: '基于大语言模型的简历润色助手（毕业设计先导）',
+      date: '2026.07 – 2026.09',
+      bullets: [
+        '调研 Prompt 工程与结构化输出方案，完成技术选型报告与可运行 Demo',
+      ],
     },
   ],
-  skills: ['Java / Spring Boot', 'JavaScript / React', 'MySQL', 'Redis', 'Git'],
-  certificates: ['CET-6', '软件设计师（软考中级）'],
-  awards: ['国家励志奖学金（2024）', '蓝桥杯软件赛省赛二等奖', '校一等奖学金 × 2'],
+  skills: [
+    'JavaScript / TypeScript',
+    'React',
+    'Vue',
+    'HTML / CSS',
+    'Node.js',
+    'Java / Spring Boot',
+    'MySQL',
+    'Redis',
+    'Git / GitHub Actions',
+    'Linux',
+  ],
+  certificates: ['CET-6（568 分）', '软件设计师（软考中级）', '普通话二级甲等'],
+  awards: [
+    '国家励志奖学金（2024）',
+    '蓝桥杯软件赛省赛二等奖（2025）',
+    '校一等奖学金 × 2',
+    '校"优秀学生干部"（2025）',
+  ],
 }
 
 export const emptyResume: ResumeData = {

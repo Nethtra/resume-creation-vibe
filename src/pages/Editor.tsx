@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Check, Download, Eye, FileCode2, PenLine, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, Check, Download, Eye, EyeOff, FileCode2, ImageDown, Loader2, PenLine, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
 import ResumePaper from '../components/ResumePaper'
 import ThemeToggle from '../components/ThemeToggle'
 import EditorForm from '../components/editor/EditorForm'
 import MarkdownModal from '../components/editor/MarkdownModal'
 import { parseMarkdown } from '../lib/markdown'
+import { exportPdf, exportPng, exportPdfMinimal } from '../lib/export'
 import {
   ACCENTS,
   DEFAULT_SPACING,
@@ -18,6 +19,8 @@ import {
 import { useEditor } from '../store/resume'
 
 const A4_WIDTH = 794
+/** A4 高度 @96dpi（内容超过此高度时双栏模板的 PDF 会压缩进单页） */
+const A4_HEIGHT_PX = 1123
 const TYPO_SIZES = [9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 14, 15]
 const TYPO_LINES = [1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]
 const SPACING_FIELDS: { key: keyof Spacing; label: string; min: number; max: number }[] = [
@@ -32,6 +35,9 @@ const TEMPLATES: { id: TemplateVariant; label: string }[] = [
   { id: 'classic', label: '经典单栏' },
   { id: 'sidebar', label: '双栏简洁' },
   { id: 'blocks', label: '简约色块' },
+  { id: 'centered', label: '居中雅致' },
+  { id: 'dark', label: '深色商务' },
+  { id: 'band', label: '顶部色带' },
 ]
 
 const btnGhost =
@@ -46,13 +52,17 @@ function SavedBadge() {
   )
 }
 
-function PreviewPane({ className = '', template, accentId, data, typography, spacing }: {
+function PreviewPane({ className = '', template, accentId, data, typography, spacing, onInnerHeight, hideEmpty, setHideEmpty }: {
   className?: string
   template: TemplateVariant
   accentId: string
   data: ResumeData
   typography: Typography
   spacing: Spacing
+  /** 纸面自然高度（未缩放 px），供导出时判断内容是否超出 A4 一页 */
+  onInnerHeight?: (h: number) => void
+  hideEmpty: boolean
+  setHideEmpty: (v: boolean) => void
 }) {
   const setTemplate = useEditor((s) => s.setTemplate)
   const setAccentId = useEditor((s) => s.setAccentId)
@@ -75,6 +85,7 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
     const update = () => {
       setScale(Math.min(1, (wrap.clientWidth - 28) / A4_WIDTH))
       setInnerH(inner.offsetHeight)
+      onInnerHeight?.(inner.offsetHeight)
     }
     update()
     const ro = new ResizeObserver(update)
@@ -91,7 +102,7 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
       className={`${className} min-w-0 flex-col max-lg:h-[calc(100dvh-200px)] lg:sticky lg:top-[68px] lg:h-[calc(100vh-92px)]`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
-        <div role="tablist" aria-label="简历模板" className="flex gap-1 rounded-lg border border-line bg-surface p-1">
+        <div role="tablist" aria-label="简历模板" className="flex flex-wrap gap-1 rounded-lg border border-line bg-surface p-1">
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
@@ -172,6 +183,17 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
             ))}
           </span>
         </span>
+        <button
+          type="button"
+          onClick={() => setHideEmpty(!hideEmpty)}
+          aria-pressed={hideEmpty}
+          title={hideEmpty ? '已开启：未填写的模块不出现在简历上（点击关闭）' : '已关闭：空模块会以标题形式显示（点击开启）'}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 ${
+            hideEmpty ? 'border-ink bg-ink text-paper' : 'border-line bg-surface text-ink-2 hover:text-ink'
+          }`}
+        >
+          {hideEmpty ? <EyeOff size={12} /> : <Eye size={12} />} 隐藏空模块
+        </button>
         <span className="relative">
           <button
             type="button"
@@ -234,6 +256,7 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
               spacing={spacing}
               order={sectionOrder}
               sidebarPct={sidebarPct}
+              hideEmpty={hideEmpty}
               onSidebarResize={setSidebarPct}
             />
           </div>
@@ -242,7 +265,7 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
       <p className="pt-2 text-center text-xs text-ink-2">
         {template === 'sidebar'
           ? 'A4 实时预览 · 拖动双栏之间的竖线可调整侧栏宽度 · 数据只保存在本机'
-          : 'A4 实时预览 · 数据只保存在本机，PDF 导出在 M2 上线'}
+          : 'A4 实时预览 · 导出的 PDF 为可选中、可检索的真实文本 · 数据只保存在本机'}
       </p>
     </section>
   )
@@ -254,6 +277,10 @@ export default function Editor() {
   const accentId = useEditor((s) => s.accentId)
   const typography = useEditor((s) => s.typography)
   const spacing = useEditor((s) => s.spacing)
+  const sectionOrder = useEditor((s) => s.sectionOrder)
+  const sidebarPct = useEditor((s) => s.sidebarPct)
+  const hideEmpty = useEditor((s) => s.hideEmpty)
+  const setHideEmpty = useEditor((s) => s.setHideEmpty)
   const setTemplate = useEditor((s) => s.setTemplate)
   const loadSample = useEditor((s) => s.loadSample)
   const resetAll = useEditor((s) => s.resetAll)
@@ -264,13 +291,15 @@ export default function Editor() {
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
   const [tab, setTab] = useState<'form' | 'preview'>('form')
   const [mdOpen, setMdOpen] = useState(false)
+  const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const innerHeightRef = useRef(1123)
 
   // 轮播卡片 / 模板页跳转进来时带上 ?template=xxx
   useEffect(() => {
     const t = params.get('template')
-    if (t === 'classic' || t === 'sidebar' || t === 'blocks') {
-      setTemplate(t)
+    if (t && TEMPLATES.some((x) => x.id === t)) {
+      setTemplate(t as TemplateVariant)
       params.delete('template')
       setParams(params, { replace: true })
     }
@@ -315,6 +344,51 @@ export default function Editor() {
     }
   }
 
+  const onExportPdf = async () => {
+    if (exporting) return
+    setExporting('pdf')
+    try {
+      // 诊断开关：/editor?pdfmin=1 → 最小文档（隔离 react-pdf 环境问题）；pdfmin=cn → 加中文字体；pdfmin=svg → 再加 SVG 图标
+      const pdfmin = new URLSearchParams(window.location.search).get('pdfmin')
+      if (pdfmin !== null) {
+        const size = await exportPdfMinimal(pdfmin === 'cn' || pdfmin === 'svg', pdfmin === 'svg')
+        setMsg({ text: `最小文档已导出（${(size / 1024).toFixed(0)}KB）` })
+        return
+      }
+      const missing = await exportPdf({ data, template, accentId, typography, spacing, sectionOrder, sidebarPct, hideEmpty })
+      // 双栏模板是固定行布局：内容超过一页时 react-pdf 会压缩进单页（数据不丢但变密），如实提醒
+      if (template === 'sidebar' && innerHeightRef.current > A4_HEIGHT_PX + 40) {
+        setMsg({ text: 'PDF 已导出 · 注意：双栏模板内容较多，超出一页的部分会被压缩，建议精简内容或调小字号/间距', bad: true })
+        return
+      }
+      setMsg(
+        missing.length
+          ? { text: `PDF 已导出 · 注意：${missing.join('、')} 超出内嵌字库，可能显示为空心框`, bad: true }
+          : { text: 'PDF 已导出 · 真实文本，可选中可检索' },
+      )
+    } catch (e) {
+      console.error(e)
+      setMsg({ text: 'PDF 导出失败：' + (e instanceof Error ? e.message : String(e)), bad: true })
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  // PNG 导出：从导出的 PDF 光栅化拼接长图（与 PDF 同源渲染，双 Tab 下都可用）
+  const onExportPng = async () => {
+    if (exporting) return
+    setExporting('png')
+    try {
+      const pages = await exportPng({ data, template, accentId, typography, spacing, sectionOrder, sidebarPct, hideEmpty })
+      setMsg({ text: pages > 1 ? `PNG 已导出（${pages} 页拼接长图）` : 'PNG 已导出（2 倍清晰度）' })
+    } catch (e) {
+      console.error(e)
+      setMsg({ text: 'PNG 导出失败：' + (e instanceof Error ? e.message : String(e)), bad: true })
+    } finally {
+      setExporting(null)
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/95 backdrop-blur">
@@ -339,24 +413,30 @@ export default function Editor() {
             <button type="button" onClick={() => setMdOpen(true)} className={btnGhost} title="从 Markdown 导入简历内容">
               <FileCode2 size={13} /> <span className="hidden md:inline">Markdown</span>
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} className={btnGhost}>
+            <button type="button" onClick={() => fileRef.current?.click()} className={btnGhost} aria-label="导入 JSON" title="导入 JSON 备份文件">
               <Upload size={13} /> <span className="hidden md:inline">导入 JSON</span>
             </button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onImportFile} />
-            <button type="button" onClick={exportJson} className={btnGhost}>
+            <button type="button" onClick={exportJson} className={btnGhost} aria-label="导出 JSON" title="导出 JSON 备份">
               <Download size={13} /> <span className="hidden md:inline">导出 JSON</span>
             </button>
             <button type="button" onClick={onReset} aria-label="清空数据" className={`${btnGhost} max-sm:hidden px-2.5`}>
               <Trash2 size={13} />
             </button>
+            <button type="button" onClick={onExportPng} disabled={exporting !== null} className={btnGhost} title="导出 PNG 长图（分享预览用，非文本层）">
+              {exporting === 'png' ? <Loader2 size={13} className="animate-spin" /> : <ImageDown size={13} />}
+              <span className="hidden md:inline">导出 PNG</span>
+            </button>
             <ThemeToggle />
             <button
               type="button"
-              disabled
-              title="PDF 导出将在 M2 里程碑上线"
-              className="ml-1 inline-flex flex-none cursor-not-allowed items-center gap-1.5 whitespace-nowrap rounded-lg bg-ink/40 px-2.5 py-2 text-sm font-medium text-paper sm:px-3.5"
+              onClick={onExportPdf}
+              disabled={exporting !== null}
+              title="导出 ATS 友好 PDF：真实文本层，可选中可检索"
+              className="ml-1 inline-flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg bg-ink px-2.5 py-2 text-sm font-medium text-paper transition-all duration-200 hover:bg-ink/85 active:scale-[0.97] disabled:cursor-wait sm:px-3.5"
             >
-              <span className="hidden sm:inline">导出 </span>PDF <span className="rounded bg-paper/20 px-1 text-[10px]">M2</span>
+              {exporting === 'pdf' && <Loader2 size={13} className="animate-spin" aria-hidden />}
+              <span className="hidden sm:inline">{exporting === 'pdf' ? '生成中' : '导出 '}</span>PDF
             </button>
           </div>
         </div>
@@ -373,6 +453,9 @@ export default function Editor() {
           data={data}
           typography={typography}
           spacing={spacing}
+          onInnerHeight={(h) => (innerHeightRef.current = h)}
+          hideEmpty={hideEmpty}
+          setHideEmpty={setHideEmpty}
         />
       </main>
 

@@ -28,6 +28,8 @@ interface EditorState {
   sectionOrder: SectionId[]
   /** 双栏简洁模板的侧栏宽度百分比 */
   sidebarPct: number
+  /** 隐藏空模块：未填写的区块不出现在简历上（预览与 PDF 同步） */
+  hideEmpty: boolean
   savedAt: number
   update: (patch: Partial<ResumeData>) => void
   addEntry: (key: EntryKey) => void
@@ -42,6 +44,7 @@ interface EditorState {
   setSpacing: (patch: Partial<Spacing>) => void
   reorderSections: (order: SectionId[]) => void
   setSidebarPct: (v: number) => void
+  setHideEmpty: (v: boolean) => void
   loadSample: () => void
   resetAll: () => void
   applyData: (d: ResumeData) => void
@@ -62,6 +65,7 @@ export const useEditor = create<EditorState>()(
       spacing: DEFAULT_SPACING,
       sectionOrder: DEFAULT_ORDER,
       sidebarPct: 32,
+      hideEmpty: true,
       savedAt: 0,
       update: (patch) => set((s) => ({ data: { ...s.data, ...patch }, savedAt: Date.now() })),
       addEntry: (key) =>
@@ -95,6 +99,7 @@ export const useEditor = create<EditorState>()(
       setSpacing: (patch) => set((s) => ({ spacing: { ...s.spacing, ...patch }, savedAt: Date.now() })),
       reorderSections: (sectionOrder) => set({ sectionOrder, savedAt: Date.now() }),
       setSidebarPct: (sidebarPct) => set({ sidebarPct, savedAt: Date.now() }),
+      setHideEmpty: (hideEmpty) => set({ hideEmpty, savedAt: Date.now() }),
       loadSample: () => set({ data: sampleResume, savedAt: Date.now() }),
       resetAll: () => set({ data: emptyResume, savedAt: Date.now() }),
       applyData: (data) => set({ data, savedAt: Date.now() }),
@@ -109,7 +114,7 @@ export const useEditor = create<EditorState>()(
     }),
     {
       name: 'plainpage-resume',
-      version: 4,
+      version: 5,
       partialize: (s) => ({
         data: s.data,
         template: s.template,
@@ -118,6 +123,7 @@ export const useEditor = create<EditorState>()(
         spacing: s.spacing,
         sectionOrder: s.sectionOrder,
         sidebarPct: s.sidebarPct,
+        hideEmpty: s.hideEmpty,
       }),
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<EditorState>
@@ -127,6 +133,7 @@ export const useEditor = create<EditorState>()(
           p.sidebarPct = 32
         }
         if (version < 4) p.spacing = DEFAULT_SPACING
+        if (version < 5) p.hideEmpty = true
         return p as EditorState
       },
     },

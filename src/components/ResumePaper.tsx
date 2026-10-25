@@ -8,6 +8,7 @@ import {
   DEFAULT_TYPOGRAPHY,
   FONTS,
   sampleResume,
+  visibleOrder,
   type ResumeData,
   type ResumeEntry,
   type SectionId,
@@ -15,7 +16,7 @@ import {
   type Typography,
 } from '../lib/resume'
 
-type Variant = 'classic' | 'sidebar' | 'blocks'
+type Variant = 'classic' | 'sidebar' | 'blocks' | 'centered' | 'dark' | 'band'
 
 /** 纸面永远按浅色文档渲染（深色模式下仍是一张白纸，就像 Word 的深色模式） */
 const PIN: CSSProperties = {
@@ -44,6 +45,8 @@ export default function ResumePaper({
   spacing = DEFAULT_SPACING,
   order = DEFAULT_ORDER,
   sidebarPct = 32,
+  /** 隐藏空模块：未填写的区块不出现在简历上（编辑器开关控制） */
+  hideEmpty = false,
   onSidebarResize,
 }: {
   variant?: Variant
@@ -54,6 +57,7 @@ export default function ResumePaper({
   spacing?: Spacing
   order?: SectionId[]
   sidebarPct?: number
+  hideEmpty?: boolean
   /** 提供后双栏模板显示可拖动的分栏手柄（编辑器传入；展示场景不传） */
   onSidebarResize?: (pct: number) => void
 }) {
@@ -79,18 +83,21 @@ export default function ResumePaper({
   } as CSSProperties
   return (
     <div style={style}>
-      {variant === 'classic' && <Classic data={data} order={order} spacing={spacing} />}
+      {variant === 'classic' && <Classic data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} />}
       {variant === 'sidebar' && (
-        <AsideLight data={data} order={order} spacing={spacing} sidebarPct={sidebarPct} onSidebarResize={onSidebarResize} />
+        <AsideLight data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} sidebarPct={sidebarPct} onSidebarResize={onSidebarResize} />
       )}
-      {variant === 'blocks' && <Blocks data={data} order={order} spacing={spacing} />}
+      {variant === 'blocks' && <Blocks data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} />}
+      {variant === 'centered' && <Centered data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} />}
+      {variant === 'dark' && <DarkAside data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} sidebarPct={sidebarPct} />}
+      {variant === 'band' && <Band data={data} order={visibleOrder(order, data, hideEmpty)} spacing={spacing} />}
     </div>
   )
 }
 
 /* ---------- 区块内容（顺序由 order 驱动） ---------- */
 
-function SectionBody({ id, data }: { id: SectionId; data: ResumeData }) {
+function SectionBody({ id, data, dark }: { id: SectionId; data: ResumeData; dark?: boolean }) {
   switch (id) {
     case 'education':
       return <EntryList entries={data.education} />
@@ -99,11 +106,11 @@ function SectionBody({ id, data }: { id: SectionId; data: ResumeData }) {
     case 'projects':
       return <EntryList entries={data.projects} />
     case 'skills':
-      return <ChipRow tags={data.skills} variant="line" />
+      return <ChipRow tags={data.skills} variant="line" dark={dark} />
     case 'certificates':
-      return <ChipRow tags={data.certificates} variant="soft" />
+      return <ChipRow tags={data.certificates} variant="soft" dark={dark} />
     case 'awards':
-      return <AwardLines items={data.awards} />
+      return <AwardLines items={data.awards} dark={dark} />
   }
 }
 
@@ -203,9 +210,12 @@ function EntryList({ entries }: { entries: ResumeEntry[] }) {
   )
 }
 
-function ChipRow({ tags, variant }: { tags: string[]; variant: 'line' | 'soft' }) {
-  const cls =
-    variant === 'line' ? 'border-line bg-paper text-ink' : 'border-accent-soft bg-accent-soft font-medium text-ink'
+function ChipRow({ tags, variant, dark }: { tags: string[]; variant: 'line' | 'soft'; dark?: boolean }) {
+  const cls = dark
+    ? 'border-white/30 bg-white/10 text-[#ece9e2]'
+    : variant === 'line'
+      ? 'border-line bg-paper text-ink'
+      : 'border-accent-soft bg-accent-soft font-medium text-ink'
   return (
     <div className="mt-2 flex flex-wrap gap-1">
       {tags.map((t) => (
@@ -217,11 +227,11 @@ function ChipRow({ tags, variant }: { tags: string[]; variant: 'line' | 'soft' }
   )
 }
 
-function AwardLines({ items }: { items: string[] }) {
+function AwardLines({ items, dark }: { items: string[]; dark?: boolean }) {
   return (
     <>
       {items.map((a, i) => (
-        <div key={i} className="relative mt-1 pl-2.5 text-[length:var(--pp-fz)] text-ink-2">
+        <div key={i} className={`relative mt-1 pl-2.5 text-[length:var(--pp-fz)] ${dark ? 'text-[#ece9e2]/85' : 'text-ink-2'}`}>
           <span className="absolute left-0 top-[0.6em] h-[3px] w-[3px] flex-none rounded-full bg-accent" aria-hidden />
           {a}
         </div>
@@ -392,6 +402,152 @@ function AsideLight({
       </main>
 
       {onSidebarResize && <SidebarHandle pct={sidebarPct} onChange={onSidebarResize} />}
+    </div>
+  )
+}
+
+/* ---------- 居中雅致：姓名/意向/联系方式居中，节标题两侧细线（参考极简居中式） ---------- */
+
+function Centered({ data, order, spacing }: { data: ResumeData; order: SectionId[]; spacing: Spacing }) {
+  return (
+    <div
+      className="rounded-md border border-line bg-surface text-ink"
+      style={{ padding: `${spacing.pt}px ${spacing.px}px` }}
+    >
+      <div className="flex flex-col items-center text-center">
+        <PhotoBox photo={data.photo} shape="circle" />
+        <div className="mt-2 font-display text-[length:var(--pp-fz-name)] font-semibold tracking-[0.24em]">{data.name}</div>
+        <div className="mt-1 text-[length:var(--pp-fz-intent)] font-medium text-accent-strong">求职意向：{data.intent}</div>
+        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-0.5 text-[length:var(--pp-fz-contact)] text-ink-2">
+          <span className="inline-flex items-center gap-1">
+            <Phone size={11} className="text-accent" /> {data.phone}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Mail size={11} className="text-accent" /> {data.email}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Github size={11} className="text-accent" /> {data.github}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <MapPin size={11} className="text-accent" /> {data.location}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3.5 h-px bg-line" aria-hidden />
+
+      {order.map((id) => (
+        <div key={id} style={{ marginTop: spacing.secGap }}>
+          <div className="flex items-center gap-3" aria-hidden={false}>
+            <span className="h-px flex-1 bg-line" aria-hidden />
+            <span className="text-[length:var(--pp-fz-sec)] font-semibold tracking-[0.26em]">{SECTION_LABEL[id]}</span>
+            <span className="h-px flex-1 bg-line" aria-hidden />
+          </div>
+          <div style={{ marginTop: spacing.titleGap, paddingLeft: spacing.indent }}>
+            <SectionBody id={id} data={data} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ---------- 深色商务：近黑侧栏白字（参考蓝白商务风的深侧栏骨架，点缀主题色） ---------- */
+
+function DarkAside({ data, order, spacing, sidebarPct }: { data: ResumeData; order: SectionId[]; spacing: Spacing; sidebarPct: number }) {
+  const contact = [
+    { icon: Phone, text: data.phone },
+    { icon: Mail, text: data.email },
+    { icon: Github, text: data.github },
+    { icon: MapPin, text: data.location },
+  ]
+  const tagOrder = order.filter((id) => id === 'skills' || id === 'certificates' || id === 'awards')
+  const entryOrder = order.filter((id) => id === 'education' || id === 'work' || id === 'projects')
+  return (
+    <div
+      className="relative grid overflow-hidden rounded-md border border-line bg-surface text-ink"
+      style={{ gridTemplateColumns: `${sidebarPct}% 1fr` }}
+    >
+      <aside className="bg-ink p-5 text-[#ece9e2]">
+        <PhotoBox photo={data.photo} shape="circle" />
+        <p className="mt-3 border-b border-white/25 pb-1 text-[length:var(--pp-fz-side)] font-semibold tracking-[0.18em] text-white/75">
+          联系方式
+        </p>
+        {contact.map(({ icon: Icon, text }) => (
+          <div key={text} className="mt-1.5 flex items-start gap-1.5 text-[length:var(--pp-fz-side)]">
+            <Icon size={10} className="mt-[2px] flex-none text-accent" />
+            <span className="break-all text-[#ece9e2]/90">{text}</span>
+          </div>
+        ))}
+        {tagOrder.map((id) => (
+          <div key={id}>
+            <p className="mt-3 border-b border-white/25 pb-1 text-[length:var(--pp-fz-side)] font-semibold tracking-[0.18em] text-white/75">
+              {SECTION_LABEL[id]}
+            </p>
+            <SectionBody id={id} data={data} dark />
+          </div>
+        ))}
+      </aside>
+
+      <main style={{ padding: `${spacing.pt}px ${spacing.px}px` }}>
+        <div className="font-display text-[length:var(--pp-fz-name)] font-semibold tracking-[0.15em]">{data.name}</div>
+        <div className="mt-0.5 text-[length:var(--pp-fz-intent)] font-medium text-accent-strong">求职意向：{data.intent}</div>
+        {entryOrder.map((id) => (
+          <div key={id} style={{ marginTop: spacing.secGap }}>
+            <BarTitle icon={sectionIcon(id)}>{SECTION_LABEL[id]}</BarTitle>
+            <div style={{ marginTop: spacing.titleGap, paddingLeft: spacing.indent }}>
+              <SectionBody id={id} data={data} />
+            </div>
+          </div>
+        ))}
+      </main>
+    </div>
+  )
+}
+
+/* ---------- 顶部色带：accent-soft 色带头部（姓名/意向/照片）+ 竖条标题单栏 ---------- */
+
+function Band({ data, order, spacing }: { data: ResumeData; order: SectionId[]; spacing: Spacing }) {
+  return (
+    <div className="overflow-hidden rounded-md border border-line bg-surface text-ink">
+      <div
+        className="flex items-start justify-between gap-3 bg-accent-soft"
+        style={{ padding: `${Math.round(spacing.pt * 0.6)}px ${spacing.px}px` }}
+      >
+        <div>
+          <div className="font-display text-[length:var(--pp-fz-name)] font-semibold tracking-[0.18em]">{data.name}</div>
+          <div className="mt-1 text-[length:var(--pp-fz-intent)] font-medium text-accent-strong">求职意向：{data.intent}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3.5 gap-y-0.5 text-[length:var(--pp-fz-contact)] text-ink-2">
+            <span className="inline-flex items-center gap-1">
+              <Phone size={11} className="text-accent" /> {data.phone}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Mail size={11} className="text-accent" /> {data.email}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Github size={11} className="text-accent" /> {data.github}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={11} className="text-accent" /> {data.location}
+            </span>
+          </div>
+        </div>
+        <PhotoBox photo={data.photo} shape="rect" />
+      </div>
+
+      <div style={{ padding: `${spacing.pt}px ${spacing.px}px` }}>
+        {order.map((id) => (
+          <div key={id} style={{ marginTop: spacing.secGap }}>
+            <div className="flex items-center gap-2 border-b border-line pb-1.5">
+              <span className="h-[13px] w-[3px] flex-none rounded-sm bg-accent" aria-hidden />
+              <span className="text-[length:var(--pp-fz-sec)] font-semibold tracking-[0.16em]">{SECTION_LABEL[id]}</span>
+            </div>
+            <div style={{ marginTop: spacing.titleGap, paddingLeft: spacing.indent }}>
+              <SectionBody id={id} data={data} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

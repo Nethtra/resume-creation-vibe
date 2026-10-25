@@ -22,3 +22,12 @@ Thumbs.db
 
 # Lighthouse 临时报告
 lh*.json
+scripts/fonts-src/
+
+# E2E 渲染产物（脚本与用例保留，输出不入库）
+scripts/e2e/render.mjs
+scripts/e2e/out-*.pdf
+scripts/e2e/out-*.png
+scripts/e2e/browser-export.*
+scripts/e2e/check-header.png
+scripts/e2e/photo-b64.txt

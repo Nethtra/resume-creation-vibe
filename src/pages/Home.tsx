@@ -3,7 +3,7 @@ import { ArrowRight, BadgeCheck, ScanText, ShieldCheck } from 'lucide-react'
 import ResumePaper from '../components/ResumePaper'
 import Reveal from '../components/Reveal'
 import ThemeToggle from '../components/ThemeToggle'
-import type { TemplateVariant } from '../lib/resume'
+import { ACCENTS, DEFAULT_SPACING, type TemplateVariant, type Typography } from '../lib/resume'
 
 const features = [
   {
@@ -23,10 +23,13 @@ const features = [
   },
 ]
 
-const templates: { variant: TemplateVariant; name: string; desc: string; tags: string[] }[] = [
-  { variant: 'classic', name: '经典单栏', desc: '信息密度最高，机筛解析最稳，默认推荐', tags: ['单栏', '最 ATS'] },
-  { variant: 'sidebar', name: '双栏简洁', desc: '浅色侧栏 + 色块标题条，分栏宽度可拖动', tags: ['双栏', '可调分栏'] },
-  { variant: 'blocks', name: '简约色块', desc: '单栏排版 + 色块标题条，干净利落', tags: ['单栏', '色块标题'] },
+const templates: { variant: TemplateVariant; name: string; desc: string; tags: string[]; accent: string }[] = [
+  { variant: 'classic', name: '经典单栏', desc: '信息密度最高，机筛解析最稳，默认推荐', tags: ['单栏', '最 ATS'], accent: 'terra' },
+  { variant: 'sidebar', name: '双栏简洁', desc: '浅色侧栏 + 色块标题条，分栏宽度可拖动', tags: ['双栏', '可调分栏'], accent: 'indigo' },
+  { variant: 'blocks', name: '简约色块', desc: '单栏排版 + 色块标题条，干净利落', tags: ['单栏', '色块标题'], accent: 'pine' },
+  { variant: 'centered', name: '居中雅致', desc: '姓名居中 + 细线分隔，衬线标题的气质款', tags: ['单栏', '居中极简'], accent: 'wine' },
+  { variant: 'dark', name: '深色商务', desc: '近黑侧栏白字，商务感最强的双栏', tags: ['双栏', '深色侧栏'], accent: 'steel' },
+  { variant: 'band', name: '顶部色带', desc: '主题色色带头部，一眼记住你的名片位', tags: ['单栏', '色带头部'], accent: 'amber' },
 ]
 
 const faqs = [
@@ -67,7 +70,7 @@ function ShowcaseCard({ t, dup = false }: { t: (typeof templates)[number]; dup?:
       >
         <div className="overflow-hidden rounded-md border border-line" style={{ height: CARD_H }}>
           <div style={{ width: PAPER_W, transform: `scale(${CARD_SCALE})`, transformOrigin: 'top left' }}>
-            <ResumePaper variant={t.variant} />
+            <ResumePaper variant={t.variant} accent={ACCENTS.find((a) => a.id === t.accent) ?? ACCENTS[0]} />
           </div>
         </div>
         <div className="px-1 pb-1 pt-3">
@@ -159,8 +162,14 @@ export default function Home() {
             ))}
           </ul>
         </div>
-        <div className="hero-in" style={{ animationDelay: '220ms' }}>
-          <ResumePaper />
+        <div className="hero-in relative" style={{ animationDelay: '220ms' }}>
+          {/* 固定高度 + 底部渐隐：展示简历上半部分的"预告感"，不被长内容撑爆 */}
+          <div className="relative max-h-[620px] overflow-hidden rounded-md [mask-image:linear-gradient(180deg,black_74%,transparent_98%)]">
+            <ResumePaper
+              typography={{ font: 'sans', size: 9.5, lineHeight: 1.6 } as Typography}
+              spacing={{ ...DEFAULT_SPACING, secGap: 10 }}
+            />
+          </div>
         </div>
       </section>
 
@@ -183,10 +192,9 @@ export default function Home() {
           <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-3 px-5">
             <div>
               <h2 className="font-display text-3xl font-semibold">模板</h2>
-              <p className="mt-2 text-sm text-ink-2">三套全部免费、均为真实文本导出，支持 9 种主题色与字体字号行距自定义。</p>
+              <p className="mt-2 text-sm text-ink-2">六套全部免费、均为真实文本导出，支持 9 种主题色与字体字号行距自定义。</p>
             </div>
-            <span className="hidden text-xs text-ink-2 sm:block">更多模板在路线图中</span>
-          </div>
+            </div>
         </Reveal>
         <Reveal delay={100}>
           <div
