@@ -47,7 +47,18 @@ export function hasContent(id: SectionId, data: ResumeData): boolean {
 export function visibleOrder(order: SectionId[], data: ResumeData, hideEmpty: boolean): SectionId[] {
   return hideEmpty ? order.filter((id) => hasContent(id, data)) : order
 }
+
+/** 是否为全空简历（预览区显示空状态引导）：六个文本字段与全部区块均无内容（照片不算内容） */
+export function isBlank(data: ResumeData): boolean {
+  if (data.name || data.intent || data.phone || data.email || data.github || data.location) return false
+  return (['education', 'work', 'projects', 'skills', 'certificates', 'awards'] as SectionId[]).every(
+    (id) => !hasContent(id, data),
+  )
+}
 export type TemplateVariant = 'classic' | 'sidebar' | 'blocks' | 'centered' | 'dark' | 'band'
+
+/** A4 高度 @96dpi（预览与 PDF 的布局基准；内容超过此高度时双栏模板的 PDF 会压缩进单页） */
+export const A4_HEIGHT_PX = 1123
 
 /** 简历区块的默认展示顺序（用户可在表单里上下调整，全模板共享） */
 export const DEFAULT_ORDER: SectionId[] = ['education', 'work', 'projects', 'skills', 'certificates', 'awards']

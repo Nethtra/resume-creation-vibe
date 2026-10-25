@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 纯工具站：只有首页一个可索引入口（/editor 是工具页，不进 sitemap）。
+     如更换域名需同步更新此处的 loc 与 robots.txt 的 Sitemap 行。 -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://resume-creation.wtyw.asia/</loc>
+    <lastmod>2026-10-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

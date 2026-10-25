@@ -1,0 +1,44 @@
+# 素页简历 PlainPage · https://resume-creation.wtyw.asia
+# 纯静态站：全站允许抓取，无后台路径。
+
+User-agent: *
+Allow: /
+
+# ---- 传统搜索引擎 ----
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# ---- AI 搜索引擎（GEO：允许被抓取才有机会被 AI 引用）----
+# OpenAI：GPTBot（训练）/ OAI-SearchBot（ChatGPT 搜索）/ ChatGPT-User（用户发起的浏览）
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Google Gemini（内容用于 AI 回复）
+User-agent: Google-Extended
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://resume-creation.wtyw.asia/sitemap.xml

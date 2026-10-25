@@ -1,9 +1,13 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BadgeCheck, ScanText, ShieldCheck } from 'lucide-react'
 import ResumePaper from '../components/ResumePaper'
 import Reveal from '../components/Reveal'
 import ThemeToggle from '../components/ThemeToggle'
 import { ACCENTS, DEFAULT_SPACING, type TemplateVariant, type Typography } from '../lib/resume'
+
+/** SPA 内导航回来时恢复首页标题（编辑器页会改写 document.title） */
+const HOME_TITLE = '素页简历 PlainPage — 免费、无水印、ATS 友好的在线简历工具'
 
 const features = [
   {
@@ -92,6 +96,10 @@ function ShowcaseCard({ t, dup = false }: { t: (typeof templates)[number]; dup?:
 }
 
 export default function Home() {
+  useEffect(() => {
+    document.title = HOME_TITLE
+  }, [])
+
   return (
     <div className="min-h-screen">
       {/* 顶栏 */}

@@ -10,11 +10,150 @@
     <title>素页简历 PlainPage — 免费、无水印、ATS 友好的在线简历工具</title>
     <meta
       name="description"
-      content="填写信息、选模板、导出能通过机器筛选的 PDF。免费开源、无水印，简历数据只保存在你自己的浏览器里，不上传任何服务器。"
+      content="填写信息、选模板、导出能通过机器筛选的 PDF。6 套免费模板、无水印、无导出次数限制，简历数据只保存在你自己的浏览器里，不上传任何服务器。"
     />
+    <meta name="keywords" content="简历,在线简历,免费简历模板,简历制作,ATS简历,简历生成器,PDF简历,应届生简历,求职简历" />
+    <meta name="robots" content="index,follow" />
+    <!-- 站点域名固定为 resume-creation.wtyw.asia；如更换域名，需同步改本文件 canonical/og:url、
+         public/robots.txt 的 Sitemap 行与 public/sitemap.xml（见 docs/宝塔部署指南.md §11） -->
+    <link rel="canonical" href="https://resume-creation.wtyw.asia/" />
+
+    <!-- Open Graph（微信/Telegram/LinkedIn 等分享卡片） -->
+    <meta property="og:site_name" content="素页简历 PlainPage" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="素页简历 PlainPage — 免费、无水印、ATS 友好的在线简历工具" />
+    <meta
+      property="og:description"
+      content="填写信息、选模板、导出能通过机器筛选的 PDF。6 套免费模板、无水印，简历数据只保存在你自己的浏览器里。"
+    />
+    <meta property="og:url" content="https://resume-creation.wtyw.asia/" />
+    <meta property="og:image" content="https://resume-creation.wtyw.asia/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="素页简历 PlainPage：免费、无水印、ATS 友好的在线简历工具" />
+    <meta property="og:locale" content="zh_CN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="素页简历 PlainPage — 免费、无水印、ATS 友好的在线简历工具" />
+    <meta
+      name="twitter:description"
+      content="填写信息、选模板、导出能通过机器筛选的 PDF。6 套免费模板、无水印，简历数据只保存在你自己的浏览器里。"
+    />
+    <meta name="twitter:image" content="https://resume-creation.wtyw.asia/og-image.png" />
+
+    <!-- 移动端浏览器地址栏配色（跟随深浅色模式） -->
+    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171613" media="(prefers-color-scheme: dark)" />
+
+    <!--
+      结构化数据（JSON-LD）。
+      注意：FAQPage 的问答文案与 src/pages/Home.tsx 的 faqs 数组保持一致——改动任何一边都要同步另一边，
+      Google 要求 FAQ 结构化数据的内容与页面可见内容一致。
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://resume-creation.wtyw.asia/#website",
+            "url": "https://resume-creation.wtyw.asia/",
+            "name": "素页简历 PlainPage",
+            "alternateName": "PlainPage 简历",
+            "inLanguage": "zh-CN",
+            "description": "免费、无水印、ATS 友好、数据不出浏览器的在线简历制作工具，面向应届生和初级求职者。"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://resume-creation.wtyw.asia/#app",
+            "name": "素页简历 PlainPage",
+            "url": "https://resume-creation.wtyw.asia/",
+            "applicationCategory": "BusinessApplication",
+            "applicationSubCategory": "Resume Builder",
+            "operatingSystem": "Any（浏览器应用）",
+            "browserRequirements": "需要启用 JavaScript 的现代浏览器",
+            "inLanguage": "zh-CN",
+            "isAccessibleForFree": true,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "CNY",
+              "description": "全部模板免费，导出无水印、无次数限制"
+            },
+            "featureList": [
+              "6 套简历模板（经典单栏、双栏简洁、简约色块、居中雅致、深色商务、顶部色带）",
+              "导出 ATS 友好 PDF：真实文本层，可选中、可检索",
+              "导出 PNG 长图",
+              "9 种主题色与字体、字号、行距、页边距自定义",
+              "简历数据仅保存在浏览器 localStorage，不上传服务器",
+              "JSON 备份导入导出与 Markdown 导入",
+              "无需注册登录，无水印，无导出次数限制"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://resume-creation.wtyw.asia/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "真的免费吗？导出有水印吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "完全免费、无水印、无导出次数限制。项目开源，模板与导出功能不设付费墙。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "我的简历数据存在哪里？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "只存在你自己浏览器的 localStorage 里，不上传任何服务器。可以随时导出 JSON 备份，也可以一键清除全部数据。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "「ATS 友好」是什么意思？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "ATS 是企业用来初筛简历的机器系统。本站导出的 PDF 是真实文本（可选中、可复制、顺序清晰），机筛解析不丢内容——不少图形化简历工具的 PDF 会在这一步丢分。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "支持导出 Word 吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "当前版本支持 PDF 与 PNG；Word 格式已在路线图中。"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      noscript：本站是 SPA，正文由 React 渲染。不执行 JS 的爬虫（GPTBot / Baidu 等）只能看到这里的静态文案，
+      因此把核心卖点与定位写在这里（改首页文案时无需同步——这里是独立摘要，非逐字引用）。
+    -->
+    <noscript>
+      <div style="max-width: 720px; margin: 40px auto; font-family: sans-serif; color: #191919; line-height: 1.7">
+        <h1>素页简历 PlainPage — 免费、无水印、ATS 友好的在线简历工具</h1>
+        <p>
+          面向应届生和初级求职者的在线简历制作工具：填写信息、选模板、导出能通过机器筛选（ATS）的 PDF。
+          提供 6 套免费简历模板，支持 9 种主题色与字体字号行距自定义。
+        </p>
+        <ul>
+          <li>ATS 友好：导出的 PDF 是真实文本层，可选中、可检索，机筛解析不丢内容；</li>
+          <li>真免费无水印：开源项目，无导出次数墙；</li>
+          <li>隐私：简历数据只保存在你自己的浏览器 localStorage 里，不上传任何服务器，全站无统计埋点。</li>
+        </ul>
+        <p>本工具需要启用 JavaScript。常见问题：完全免费无水印；数据仅存本地可导出 JSON 备份；当前支持导出 PDF 与 PNG。</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

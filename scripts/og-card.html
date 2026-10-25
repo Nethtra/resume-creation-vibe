@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<!-- OG 分享图源文件：用 Edge headless 截图为 public/og-image.png（1200x630），见 scripts/README-og.md -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: #faf9f5;
+    color: #191919;
+    font-family: "Poppins", "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: grid;
+    grid-template-columns: 700px 1fr;
+  }
+  .left { padding: 72px 0 64px 76px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 600; letter-spacing: 0.04em; }
+  .brand .dot { width: 20px; height: 20px; border-radius: 5px; background: #d97757; }
+  h1 {
+    margin-top: 84px;
+    font-family: Georgia, "Songti SC", "SimSun", serif;
+    font-size: 62px;
+    line-height: 1.28;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  h1 em { font-style: normal; color: #b85c3f; }
+  .sub { margin-top: 34px; font-size: 23px; line-height: 1.7; color: #6e6a63; }
+  .tags { margin-top: auto; display: flex; gap: 12px; }
+  .tag {
+    border: 1px solid #e5e2da; background: #ffffff; border-radius: 999px;
+    padding: 9px 20px; font-size: 18px; color: #191919;
+  }
+  .tag b { color: #b85c3f; font-weight: 600; }
+  /* 右侧：迷你简历纸样（纯 CSS 示意） */
+  .right { position: relative; }
+  .paper {
+    position: absolute; top: 76px; right: 88px;
+    width: 380px; height: 500px;
+    background: #ffffff; border: 1px solid #e5e2da; border-radius: 10px;
+    padding: 34px 30px;
+    box-shadow: none;
+  }
+  .name { font-size: 30px; font-weight: 700; }
+  .intent { margin-top: 6px; font-size: 15px; color: #b85c3f; font-weight: 600; }
+  .line { height: 1px; background: #e5e2da; margin: 18px 0; }
+  .sec { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .sec .bar { width: 4px; height: 14px; background: #d97757; border-radius: 2px; }
+  .sec .t { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+  .row { height: 9px; border-radius: 4px; background: #eceae2; margin: 10px 0; }
+  .row.w60 { width: 60%; } .row.w85 { width: 85%; } .row.w75 { width: 75%; } .row.w90 { width: 90%; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip { border: 1px solid #e5e2da; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: #6e6a63; }
+  .url {
+    position: absolute; bottom: 40px; right: 88px;
+    font-size: 17px; color: #6e6a63; letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="brand"><span class="dot"></span>素页简历 PlainPage</div>
+    <h1>免费、无水印，<br />做出<em>能过机筛</em><br />的简历</h1>
+    <p class="sub">导出的 PDF 是真实文本层，可选中、可检索；<br />数据只保存在你自己的浏览器里。</p>
+    <div class="tags">
+      <span class="tag"><b>6 套</b>免费模板</span>
+      <span class="tag"><b>0</b> 元无水印</span>
+      <span class="tag"><b>真文本</b> PDF</span>
+    </div>
+  </div>
+  <div class="right">
+    <div class="paper" aria-hidden="true">
+      <div class="name">张小明</div>
+      <div class="intent">前端开发工程师 · 2027 届</div>
+      <div class="line"></div>
+      <div class="sec"><span class="bar"></span><span class="t">教育经历</span></div>
+      <div class="row w85"></div><div class="row w75"></div>
+      <div class="sec" style="margin-top:20px"><span class="bar"></span><span class="t">实习经历</span></div>
+      <div class="row w90"></div><div class="row w60"></div>
+      <div class="sec" style="margin-top:20px"><span class="bar"></span><span class="t">技能</span></div>
+      <div class="chips">
+        <span class="chip">React</span><span class="chip">TypeScript</span><span class="chip">Node.js</span><span class="chip">MySQL</span>
+      </div>
+    </div>
+    <div class="url">resume-creation.wtyw.asia</div>
+  </div>
+</body>
+</html>

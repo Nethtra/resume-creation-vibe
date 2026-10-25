@@ -1,16 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Check, Download, Eye, EyeOff, FileCode2, ImageDown, Loader2, PenLine, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, Check, ClipboardCheck, Download, Eye, EyeOff, FileCode2, ImageDown, Loader2, PenLine, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
 import ResumePaper from '../components/ResumePaper'
+import ErrorBoundary from '../components/ErrorBoundary'
 import ThemeToggle from '../components/ThemeToggle'
 import EditorForm from '../components/editor/EditorForm'
 import MarkdownModal from '../components/editor/MarkdownModal'
+import AtsModal from '../components/editor/AtsModal'
 import { parseMarkdown } from '../lib/markdown'
 import { exportPdf, exportPng, exportPdfMinimal } from '../lib/export'
 import {
   ACCENTS,
+  A4_HEIGHT_PX,
   DEFAULT_SPACING,
   FONTS,
+  isBlank,
   type ResumeData,
   type Spacing,
   type TemplateVariant,
@@ -19,8 +23,6 @@ import {
 import { useEditor } from '../store/resume'
 
 const A4_WIDTH = 794
-/** A4 高度 @96dpi（内容超过此高度时双栏模板的 PDF 会压缩进单页） */
-const A4_HEIGHT_PX = 1123
 const TYPO_SIZES = [9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 14, 15]
 const TYPO_LINES = [1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]
 const SPACING_FIELDS: { key: keyof Spacing; label: string; min: number; max: number }[] = [
@@ -52,6 +54,32 @@ function SavedBadge() {
   )
 }
 
+/* 预览空状态：全空简历时替代纸面，引导三步走（数据仍实时保存在 store） */
+function EditorEmptyState({ onSample }: { onSample: () => void }) {
+  return (
+    <div
+      className="flex h-full min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-line bg-surface p-8 text-center"
+      aria-label="预览区空状态"
+    >
+      <span className="inline-block h-3 w-3 rounded-[3px] bg-accent" aria-hidden />
+      <div>
+        <p className="font-display text-lg font-semibold">从一份空白简历开始</p>
+        <p className="mx-auto mt-2 max-w-[38ch] text-sm leading-relaxed text-ink-2">
+          在左侧填写内容，这里会实时生成 A4 简历纸。三步走：填基本信息 → 补教育与经历 → 导出 PDF。
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onSample}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-paper transition-all duration-200 hover:bg-ink active:scale-[0.97]"
+      >
+        <Sparkles size={13} /> 填入示例看看效果
+      </button>
+      <p className="text-xs text-ink-2">数据只保存在本机 · 顶栏可随时「导出 JSON」备份</p>
+    </div>
+  )
+}
+
 function PreviewPane({ className = '', template, accentId, data, typography, spacing, onInnerHeight, hideEmpty, setHideEmpty }: {
   className?: string
   template: TemplateVariant
@@ -77,6 +105,8 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
   const [scale, setScale] = useState(0.5)
   const [innerH, setInnerH] = useState(1123)
   const [spacingOpen, setSpacingOpen] = useState(false)
+  const blank = isBlank(data)
+  const loadSample = useEditor((s) => s.loadSample)
 
   useLayoutEffect(() => {
     const wrap = wrapRef.current
@@ -92,7 +122,13 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
     ro.observe(wrap)
     ro.observe(inner)
     return () => ro.disconnect()
-  }, [])
+    // blank 切换时纸面 DOM 卸载/重挂载，需要重建 ResizeObserver（否则从空状态填字后缩放失效）
+  }, [blank])
+
+  // 空状态下纸面不存在：把纸高复位为一页，避免导出侧栏模板的超页提醒用到陈旧值
+  useEffect(() => {
+    if (blank) onInnerHeight?.(A4_HEIGHT_PX)
+  }, [blank])
 
   const accent = ACCENTS.find((a) => a.id === accentId) ?? ACCENTS[0]
 
@@ -246,21 +282,27 @@ function PreviewPane({ className = '', template, accentId, data, typography, spa
       </div>
 
       <div ref={wrapRef} className="min-h-[380px] flex-1 overflow-auto rounded-xl border border-line bg-stage p-3.5">
-        <div style={{ width: A4_WIDTH * scale, height: innerH * scale, margin: '0 auto' }}>
-          <div ref={innerRef} style={{ width: A4_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-            <ResumePaper
-              variant={template}
-              data={data}
-              accent={accent}
-              typography={typography}
-              spacing={spacing}
-              order={sectionOrder}
-              sidebarPct={sidebarPct}
-              hideEmpty={hideEmpty}
-              onSidebarResize={setSidebarPct}
-            />
+        {blank ? (
+          <EditorEmptyState onSample={loadSample} />
+        ) : (
+          <div style={{ width: A4_WIDTH * scale, height: innerH * scale, margin: '0 auto' }}>
+            <div ref={innerRef} style={{ width: A4_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+              <ErrorBoundary variant="panel" title="预览渲染出错">
+                <ResumePaper
+                  variant={template}
+                  data={data}
+                  accent={accent}
+                  typography={typography}
+                  spacing={spacing}
+                  order={sectionOrder}
+                  sidebarPct={sidebarPct}
+                  hideEmpty={hideEmpty}
+                  onSidebarResize={setSidebarPct}
+                />
+              </ErrorBoundary>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <p className="pt-2 text-center text-xs text-ink-2">
         {template === 'sidebar'
@@ -291,9 +333,15 @@ export default function Editor() {
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
   const [tab, setTab] = useState<'form' | 'preview'>('form')
   const [mdOpen, setMdOpen] = useState(false)
+  const [atsOpen, setAtsOpen] = useState(false)
   const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const innerHeightRef = useRef(1123)
+
+  // SPA 内页标题（首页沿用 index.html 的静态 title，从这里返回时复位）
+  useEffect(() => {
+    document.title = '编辑器 · 素页简历 PlainPage'
+  }, [])
 
   // 轮播卡片 / 模板页跳转进来时带上 ?template=xxx
   useEffect(() => {
@@ -427,6 +475,14 @@ export default function Editor() {
               {exporting === 'png' ? <Loader2 size={13} className="animate-spin" /> : <ImageDown size={13} />}
               <span className="hidden md:inline">导出 PNG</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setAtsOpen(true)}
+              className={btnGhost}
+              title="导出前自查：必填信息、内容完整度与排版（只给建议，不拦截导出）"
+            >
+              <ClipboardCheck size={13} /> <span className="hidden md:inline">ATS 自检</span>
+            </button>
             <ThemeToggle />
             <button
               type="button"
@@ -481,6 +537,7 @@ export default function Editor() {
       </nav>
 
       {mdOpen && <MarkdownModal onClose={() => setMdOpen(false)} onApply={applyMarkdown} />}
+      {atsOpen && <AtsModal onClose={() => setAtsOpen(false)} data={data} paperHeight={innerHeightRef.current} />}
     </div>
   )
 }
