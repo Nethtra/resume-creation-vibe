@@ -1,6 +1,6 @@
 # 素页简历 PlainPage
 
-**线上地址：https://resume-creation.wtyw.asia**（部署手册见 `docs/宝塔部署指南.md`）
+线上部署手册见 `docs/宝塔部署指南.md`
 
 免费、无水印、ATS 友好的在线简历工具。填写信息 → 选模板 → 导出能通过机器筛选的 PDF。
 
