@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- 主题变量：语义色在浅色/深色下分别取值，UI 组件只引用语义 token ---- */
+:root {
+  color-scheme: light;
+  --pp-paper: #faf9f5;
+  --pp-surface: #ffffff;
+  --pp-ink: #191919;
+  --pp-ink-2: #6e6a63;
+  --pp-line: #e5e2da;
+  --pp-soft: #f6ebe4;
+  --pp-stage: #eceae2;
+  --pp-accent: #d97757;
+  --pp-accent-strong: #b85c3f;
+  --pp-accent-deep: #a9502f;
+  --pp-ok: #16a34a;
+}
+
+.dark {
+  color-scheme: dark;
+  --pp-paper: #171613;
+  --pp-surface: #201e1b;
+  --pp-ink: #ece9e2;
+  --pp-ink-2: #a39e93;
+  --pp-line: #35322c;
+  --pp-soft: #382e27;
+  --pp-stage: #12110e;
+  --pp-accent: #d97757;
+  --pp-accent-strong: #e0916f;
+  --pp-accent-deep: #e0916f;
+  --pp-ok: #4ade80;
+}
+
+@theme {
+  --color-paper: var(--pp-paper);
+  --color-surface: var(--pp-surface);
+  --color-ink: var(--pp-ink);
+  --color-ink-2: var(--pp-ink-2);
+  --color-line: var(--pp-line);
+  --color-accent-soft: var(--pp-soft);
+  --color-stage: var(--pp-stage);
+  --color-accent: var(--pp-accent);
+  --color-accent-strong: var(--pp-accent-strong);
+  --color-accent-deep: var(--pp-accent-deep);
+  --color-ok: var(--pp-ok);
+
+  --font-sans: "Poppins", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "Lora", Georgia, "Songti SC", "SimSun", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: rgb(217 119 87 / 0.25);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ---- 动效 ---- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 首页 hero 首屏入场（错峰由 inline animation-delay 控制） */
+.hero-in {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 自动保存指示：key 变化时重挂载并重放 */
+.saved-flash {
+  animation: fade-up 0.45s ease-out;
+}
+
+/* 模板轮播：轨道平移一半即一整份内容，两份内容循环 */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+/* 导航链接下划线滑入 */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1.5px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* 手风琴展开收起（grid-rows 技巧，高度自适应） */
+.acc-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.acc-body.open {
+  grid-template-rows: 1fr;
+}
+.acc-body > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track {
+    animation: none;
+  }
+  .hero-in,
+  .saved-flash {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
