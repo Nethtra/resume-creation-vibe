@@ -13,6 +13,8 @@ export interface ResumeData {
   location: string
   /** 证件照 dataURL（本地压缩后存储；ATS 忽略图片，不影响机筛） */
   photo?: string
+  /** 个人优势（多行文本，一行一条；渲染为圆点列表） */
+  summary: string
   education: ResumeEntry[]
   work: ResumeEntry[]
   projects: ResumeEntry[]
@@ -23,11 +25,14 @@ export interface ResumeData {
 
 export type EntryKey = 'education' | 'work' | 'projects'
 export type TagKey = 'skills' | 'certificates' | 'awards'
-export type SectionId = EntryKey | TagKey
+export type SectionId = EntryKey | TagKey | 'summary'
 
 /** 区块是否有内容（「隐藏空模块」开启时空区块不出现在简历上） */
 export function hasContent(id: SectionId, data: ResumeData): boolean {
   switch (id) {
+    case 'summary':
+      // ?? 兜底：旧版本持久化数据可能缺 summary 字段
+      return !!data.summary && data.summary.trim().length > 0
     case 'education':
       return data.education.length > 0
     case 'work':
@@ -50,7 +55,7 @@ export function visibleOrder(order: SectionId[], data: ResumeData, hideEmpty: bo
 
 /** 是否为全空简历（预览区显示空状态引导）：六个文本字段与全部区块均无内容（照片不算内容） */
 export function isBlank(data: ResumeData): boolean {
-  if (data.name || data.intent || data.phone || data.email || data.github || data.location) return false
+  if (data.name || data.intent || data.phone || data.email || data.github || data.location || data.summary) return false
   return (['education', 'work', 'projects', 'skills', 'certificates', 'awards'] as SectionId[]).every(
     (id) => !hasContent(id, data),
   )
@@ -60,8 +65,8 @@ export type TemplateVariant = 'classic' | 'sidebar' | 'blocks' | 'centered' | 'd
 /** A4 高度 @96dpi（预览与 PDF 的布局基准；内容超过此高度时双栏模板的 PDF 会压缩进单页） */
 export const A4_HEIGHT_PX = 1123
 
-/** 简历区块的默认展示顺序（用户可在表单里上下调整，全模板共享） */
-export const DEFAULT_ORDER: SectionId[] = ['education', 'work', 'projects', 'skills', 'certificates', 'awards']
+/** 简历区块的默认展示顺序（用户可在表单里上下调整，全模板共享；个人优势按国内模板惯例放最后） */
+export const DEFAULT_ORDER: SectionId[] = ['education', 'work', 'projects', 'skills', 'certificates', 'awards', 'summary']
 
 /** 简历正文字体（纸面固定浅色渲染，字体由用户选择；均为 Windows 系统自带，无需下载） */
 export const FONTS = [
@@ -114,6 +119,17 @@ export const ACCENTS = [
 
 export type AccentPreset = (typeof ACCENTS)[number]
 
+/** 简历区块标题（HTML 预览与 PDF 共用，保证两端文案一致） */
+export const SECTION_LABEL: Record<SectionId, string> = {
+  education: '教育经历',
+  work: '实习 / 工作经历',
+  projects: '项目经历',
+  skills: '技能',
+  certificates: '证书',
+  awards: '荣誉奖项',
+  summary: '个人优势',
+}
+
 export const sampleResume: ResumeData = {
   name: '张小明',
   intent: '前端开发工程师（2027 届）',
@@ -121,6 +137,7 @@ export const sampleResume: ResumeData = {
   email: 'zhangming@mail.com',
   github: 'github.com/zhangming',
   location: '杭州',
+  summary: '',
   education: [
     {
       title: '某某大学 · 计算机科学与技术（本科）',
@@ -203,6 +220,7 @@ export const emptyResume: ResumeData = {
   email: '',
   github: '',
   location: '',
+  summary: '',
   education: [],
   work: [],
   projects: [],
@@ -233,6 +251,7 @@ export function normalizeResume(raw: unknown): ResumeData {
     github: str(d.github),
     location: str(d.location),
     photo: str(d.photo) || undefined,
+    summary: str(d.summary),
     education: entries(d.education),
     work: entries(d.work),
     projects: entries(d.projects),

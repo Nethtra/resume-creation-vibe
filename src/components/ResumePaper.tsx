@@ -8,6 +8,7 @@ import {
   DEFAULT_TYPOGRAPHY,
   FONTS,
   sampleResume,
+  SECTION_LABEL,
   visibleOrder,
   type ResumeData,
   type ResumeEntry,
@@ -27,15 +28,6 @@ const PIN: CSSProperties = {
   '--color-line': '#e5e2da',
   '--color-ok': '#16a34a',
 } as CSSProperties
-
-const SECTION_LABEL: Record<SectionId, string> = {
-  education: '教育经历',
-  work: '实习 / 工作经历',
-  projects: '项目经历',
-  skills: '技能',
-  certificates: '证书',
-  awards: '荣誉奖项',
-}
 
 export default function ResumePaper({
   variant = 'classic',
@@ -99,6 +91,8 @@ export default function ResumePaper({
 
 function SectionBody({ id, data, dark }: { id: SectionId; data: ResumeData; dark?: boolean }) {
   switch (id) {
+    case 'summary':
+      return <AwardLines items={data.summary.split('\n').filter((l) => l.trim())} />
     case 'education':
       return <EntryList entries={data.education} />
     case 'work':
@@ -363,7 +357,7 @@ function AsideLight({
     { icon: MapPin, text: data.location },
   ]
   const tagOrder = order.filter((id) => id === 'skills' || id === 'certificates' || id === 'awards')
-  const entryOrder = order.filter((id) => id === 'education' || id === 'work' || id === 'projects')
+  const entryOrder = order.filter((id) => id === 'education' || id === 'work' || id === 'projects' || id === 'summary')
   return (
     <div
       className="relative grid overflow-hidden rounded-md border border-line bg-surface text-ink"
@@ -462,7 +456,7 @@ function DarkAside({ data, order, spacing, sidebarPct }: { data: ResumeData; ord
     { icon: MapPin, text: data.location },
   ]
   const tagOrder = order.filter((id) => id === 'skills' || id === 'certificates' || id === 'awards')
-  const entryOrder = order.filter((id) => id === 'education' || id === 'work' || id === 'projects')
+  const entryOrder = order.filter((id) => id === 'education' || id === 'work' || id === 'projects' || id === 'summary')
   return (
     <div
       className="relative grid overflow-hidden rounded-md border border-line bg-surface text-ink"

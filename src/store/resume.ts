@@ -49,6 +49,8 @@ interface EditorState {
   resetAll: () => void
   applyData: (d: ResumeData) => void
   importJson: (raw: string) => string | null
+  /** 一键清空某个分块的全部内容（表单「清空此块」按钮；清空后配合「隐藏空模块」整块不再出现在简历上） */
+  clearSection: (id: SectionId) => void
 }
 
 /** 组合出新的 data（computed key 的 TS 宽化需要收窄） */
@@ -103,6 +105,11 @@ export const useEditor = create<EditorState>()(
       loadSample: () => set({ data: sampleResume, savedAt: Date.now() }),
       resetAll: () => set({ data: emptyResume, savedAt: Date.now() }),
       applyData: (data) => set({ data, savedAt: Date.now() }),
+      clearSection: (id) =>
+        set((s) => ({
+          data: id === 'summary' ? { ...s.data, summary: '' } : withKey(s.data, id as EntryKey | TagKey, []),
+          savedAt: Date.now(),
+        })),
       importJson: (raw) => {
         try {
           set({ data: normalizeResume(JSON.parse(raw)), savedAt: Date.now() })
@@ -114,7 +121,7 @@ export const useEditor = create<EditorState>()(
     }),
     {
       name: 'plainpage-resume',
-      version: 5,
+      version: 6,
       partialize: (s) => ({
         data: s.data,
         template: s.template,
@@ -134,6 +141,14 @@ export const useEditor = create<EditorState>()(
         }
         if (version < 4) p.spacing = DEFAULT_SPACING
         if (version < 5) p.hideEmpty = true
+        if (version < 6) {
+          // v6 新增「个人优势」：老数据回填 summary 字段（缺字段会让 textarea 变非受控），
+          // sectionOrder 没有该块则追加到末尾（与新默认顺序一致）
+          p.data = { ...emptyResume, ...p.data, summary: p.data?.summary ?? '' }
+          if (Array.isArray(p.sectionOrder) && !p.sectionOrder.includes('summary')) {
+            p.sectionOrder = [...p.sectionOrder, 'summary']
+          }
+        }
         return p as EditorState
       },
     },

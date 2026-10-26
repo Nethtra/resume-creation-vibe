@@ -5,6 +5,7 @@ import {
   DEFAULT_ORDER,
   DEFAULT_SPACING,
   DEFAULT_TYPOGRAPHY,
+  SECTION_LABEL,
   visibleOrder,
   type ResumeData,
   type ResumeEntry,
@@ -34,15 +35,6 @@ const INK2 = '#6e6a63'
 const LINE = '#e5e2da'
 const PAPER = '#faf9f5'
 const PHOTO_BG = '#f3f0e9'
-
-const SECTION_LABEL: Record<SectionId, string> = {
-  education: '教育经历',
-  work: '实习 / 工作经历',
-  projects: '项目经历',
-  skills: '技能',
-  certificates: '证书',
-  awards: '荣誉奖项',
-}
 
 function sectionIcon(id: SectionId): PdfIconName {
   switch (id) {
@@ -268,6 +260,8 @@ function AwardLines({ items, fz, a }: { items: string[]; fz: Fz; a: Accent }) {
 
 function SectionBody({ id, data, fz, a }: { id: SectionId; data: ResumeData; fz: Fz; a: Accent }) {
   switch (id) {
+    case 'summary':
+      return <AwardLines items={data.summary.split('\n').filter((l) => l.trim())} fz={fz} a={a} />
     case 'education':
       return <EntryList entries={data.education} fz={fz} a={a} />
     case 'work':
@@ -421,7 +415,9 @@ function Sidebar({
   sidebarPct,
 }: Omit<PdfResumeProps, 'variant'> & { fz: Fz; a: Accent; typo: Typography; sidebarPct: number }) {
   const tagOrder = (order ?? DEFAULT_ORDER).filter((id) => id === 'skills' || id === 'certificates' || id === 'awards')
-  const entryOrder = (order ?? DEFAULT_ORDER).filter((id) => id === 'education' || id === 'work' || id === 'projects')
+  const entryOrder = (order ?? DEFAULT_ORDER).filter(
+    (id) => id === 'education' || id === 'work' || id === 'projects' || id === 'summary',
+  )
   const contacts: [PdfIconName, string][] = [
     ['phone', data?.phone ?? ''],
     ['mail', data?.email ?? ''],
@@ -618,7 +614,9 @@ function DarkAsidePdf({
     ['map-pin', data?.location ?? ''],
   ]
   const tagOrder = (order ?? DEFAULT_ORDER).filter((id) => id === 'skills' || id === 'certificates' || id === 'awards')
-  const entryOrder = (order ?? DEFAULT_ORDER).filter((id) => id === 'education' || id === 'work' || id === 'projects')
+  const entryOrder = (order ?? DEFAULT_ORDER).filter(
+    (id) => id === 'education' || id === 'work' || id === 'projects' || id === 'summary',
+  )
   const darkLabel = {
     marginTop: pt(12),
     borderBottomWidth: 1,

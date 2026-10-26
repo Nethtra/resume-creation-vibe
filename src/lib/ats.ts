@@ -48,6 +48,7 @@ const ENTRY_LABEL: Record<SectionId, string> = {
   skills: '技能',
   certificates: '证书',
   awards: '荣誉奖项',
+  summary: '个人优势',
 }
 
 export function runAtsChecks({ data, paperHeight }: AtsInput): AtsSummary {

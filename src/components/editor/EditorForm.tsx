@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import {
   Award,
   Briefcase,
@@ -9,13 +9,14 @@ import {
   GripVertical,
   Medal,
   Plus,
+  Star,
   Trash2,
   Trophy,
   User,
   X,
 } from 'lucide-react'
 import { fileToCompressedDataUrl } from '../../lib/image'
-import type { EntryKey, ResumeData, SectionId, TagKey } from '../../lib/resume'
+import { hasContent, SECTION_LABEL, type EntryKey, type ResumeData, type SectionId, type TagKey } from '../../lib/resume'
 import { useEditor } from '../../store/resume'
 
 const inputCls =
@@ -34,7 +35,7 @@ function Labeled({ label, children, span = false }: { label: string; children: R
 
 const SECTION_META: Record<
   SectionId,
-  { label: string; icon: typeof User; kind: 'entry' | 'tag'; badge: (d: ResumeData) => string }
+  { label: string; icon: typeof User; kind: 'entry' | 'tag' | 'text'; badge: (d: ResumeData) => string }
 > = {
   education: {
     label: '教育经历',
@@ -71,6 +72,12 @@ const SECTION_META: Record<
     icon: Trophy,
     kind: 'tag',
     badge: (d) => (d.awards.length ? `${d.awards.length} 项` : '未填'),
+  },
+  summary: {
+    label: SECTION_LABEL.summary,
+    icon: Star,
+    kind: 'text',
+    badge: (d) => (d.summary.trim() ? '已填' : '未填'),
   },
 }
 
@@ -301,6 +308,63 @@ const TAG_PLACEHOLDER: Record<TagKey, string> = {
   awards: '如：国家励志奖学金（2024）',
 }
 
+/** 两步确认的「清空此块」按钮：一键清空整个分块内容（清空后配合「隐藏空模块」整块不再上简历） */
+function ClearSectionButton({ id, empty }: { id: SectionId; empty: boolean }) {
+  const clearSection = useEditor((s) => s.clearSection)
+  const [armed, setArmed] = useState(false)
+
+  useEffect(() => {
+    if (!armed) return
+    const t = setTimeout(() => setArmed(false), 2500)
+    return () => clearTimeout(t)
+  }, [armed])
+
+  if (empty) return null
+  return (
+    <button
+      type="button"
+      title="一键清空此分块的全部内容（清空后该块不再出现在简历上）"
+      aria-label={`清空「${SECTION_META[id].label}」的全部内容`}
+      onClick={() => {
+        if (armed) {
+          clearSection(id)
+          setArmed(false)
+        } else {
+          setArmed(true)
+        }
+      }}
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] transition-colors duration-150 ${
+        armed
+          ? 'border-[#c53030] bg-[#c53030]/5 text-[#c53030]'
+          : 'border-line text-ink-2 hover:border-[#c53030] hover:text-[#c53030]'
+      }`}
+    >
+      <Trash2 size={11} /> {armed ? '再点一次确认清空' : '清空此块'}
+    </button>
+  )
+}
+
+/** 个人优势：多行文本，一行一条优势（渲染为圆点列表） */
+function SummarySectionBody() {
+  const summary = useEditor((s) => s.data.summary)
+  const update = useEditor((s) => s.update)
+  return (
+    <div>
+      <textarea
+        rows={4}
+        aria-label="个人优势内容，一行一条"
+        value={summary}
+        onChange={(e) => update({ summary: e.target.value })}
+        placeholder={'一行写一条优势，例如：\n自驱力强，一年产出 3 个完整个人项目\n沟通表达清晰，有社团讲师与团队协作经验'}
+        className={`${inputCls} resize-y leading-relaxed`}
+      />
+      <p className="mt-1 text-[10px] text-ink-2">
+        一行一条，简历上显示为圆点列表；与经历重复的内容不用写，突出性格优势与岗位匹配点。
+      </p>
+    </div>
+  )
+}
+
 export default function EditorForm() {
   const data = useEditor((s) => s.data)
   const update = useEditor((s) => s.update)
@@ -439,10 +503,15 @@ export default function EditorForm() {
             onDrop={(e) => e.preventDefault()}
             gripOnMouseDown={() => setDragId(id)}
           >
+            <div className="mb-2.5 flex items-center justify-end gap-2">
+              <ClearSectionButton id={id} empty={!hasContent(id, data)} />
+            </div>
             {meta.kind === 'entry' ? (
               <EntrySectionBody entryKey={id as EntryKey} />
-            ) : (
+            ) : meta.kind === 'tag' ? (
               <TagInput tagKey={id as TagKey} placeholder={TAG_PLACEHOLDER[id as TagKey]} />
+            ) : (
+              <SummarySectionBody />
             )}
           </SectionShell>
         )

@@ -17,6 +17,7 @@ const SECTION_MAP: [RegExp, string][] = [
   [/技能/, 'skills'],
   [/证书/, 'certificates'],
   [/荣誉|奖项|获奖/, 'awards'],
+  [/个人优势|自我评价|优势|自我介绍|关于我/, 'summary'],
   [/意向|基本信息|联系/, 'basics'],
 ]
 
@@ -39,6 +40,7 @@ export function parseMarkdown(md: string): ResumeData {
     skills: [],
     certificates: [],
     awards: [],
+    summary: [] as string[],
   }
   let section: string | null = null
   let entry: { title: string; date: string; bullets: string[] } | null = null
@@ -87,6 +89,8 @@ export function parseMarkdown(md: string): ResumeData {
         const hit = kv && BASIC_KEYS.find(([re]) => re.test(kv[1]))
         if (hit) out[hit[1]] = clean(kv![2])
         else if (!out.intent) out.intent = text
+      } else if (section === 'summary') {
+        ;(out.summary as string[]).push(text)
       } else if (section && (TAG_SECTIONS as readonly string[]).includes(section)) {
         ;(out[section] as string[]).push(text)
       } else if (entry) {
@@ -99,12 +103,15 @@ export function parseMarkdown(md: string): ResumeData {
     if (section === 'basics' && kv) {
       const hit = BASIC_KEYS.find(([re]) => re.test(kv[1]))
       if (hit) out[hit[1]] = clean(kv[2])
+    } else if (section === 'summary') {
+      ;(out.summary as string[]).push(clean(line))
     } else if (section && (ENTRY_SECTIONS as readonly string[]).includes(section)) {
       flush()
       entry = { title: clean(line), date: '', bullets: [] }
     }
   }
   flush()
+  out.summary = (out.summary as string[]).join('\n')
   return normalizeResume(out)
 }
 
@@ -152,4 +159,9 @@ export const MARKDOWN_SAMPLE = `# 张小明
 ## 荣誉奖项
 
 - 国家励志奖学金（2024）
+
+## 个人优势
+
+- 自驱力强，持续产出完整可用的个人项目
+- 表达清晰，有社团讲师与多人团队协作经验
 `

@@ -44,7 +44,7 @@ export default function MarkdownModal({ onClose, onApply }: { onClose: () => voi
         </div>
         <p className="mt-2 text-xs leading-relaxed text-ink-2">
           粘贴 Markdown 或上传 .md 文件，按标题解析：<code># 姓名</code>、<code>## 分区</code>（基本信息 / 教育经历 /
-          实习(工作)经历 / 项目经历 / 技能 / 证书 / 荣誉奖项）、<code>### 条目</code>、<code>- 描述</code>。
+          实习(工作)经历 / 项目经历 / 技能 / 证书 / 荣誉奖项 / 个人优势）、<code>### 条目</code>、<code>- 描述</code>。
           <b className="text-accent-strong">导入会覆盖当前内容</b>，建议先「导出 JSON」备份。
         </p>
         <textarea
